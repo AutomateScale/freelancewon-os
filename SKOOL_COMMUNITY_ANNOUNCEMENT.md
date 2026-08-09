@@ -38,8 +38,9 @@ So we built **FreelanceWon OS** — and we're making it **100% FREE and OPEN SOU
 
 ### 💻 How to get it:
 
-- **GitHub Repo**: [Link to github.com/AutomateScale/freelancewon-os]
-- **Deploy to Vercel/Netlify**: 1-click deploy (or run locally in 2 minutes with `npm install && npm run dev`).
+- **🌐 Try the Live App Demo**: [https://freelancewon-os.pages.dev](https://freelancewon-os.pages.dev)
+- **⚡ GitHub Repo**: [https://github.com/AutomateScale/freelancewon-os](https://github.com/AutomateScale/freelancewon-os)
+- **Deploy to Vercel/Netlify/Cloudflare**: 1-click deploy (or run locally in 2 minutes with `npm install && npm run dev`).
 
 Drop a comment below with **"FW OS"** and I'll send you the direct link + video setup walkthrough!
 

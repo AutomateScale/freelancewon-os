@@ -10,6 +10,7 @@
 
 ## 🚀 Key Features
 
+- **🌐 Live Web App Demo**: Experience FreelanceWon OS live right now at [https://freelancewon-os.pages.dev](https://freelancewon-os.pages.dev)
 - **📊 Deal & Proposal Pipeline**: Interactive Kanban board to track leads from prospecting → proposal sent → interview → contract won → retainer.
 - **✍️ AI Proposal Studio**: Generate high-converting Upwork proposals and direct outreach pitches using 3 battle-tested frameworks (The Upwork Hook & Proof, The Audit & Micro-Video Pitch, and The 3-Step Guarantee).
 - **💰 Value-Based Pricing Calculator**: Stop undercharging hourly. Calculate your rate floor, value-based pricing anchors, and monthly retainer structures.
