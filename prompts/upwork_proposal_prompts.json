@@ -1,0 +1,22 @@
+{
+  "prompts": [
+    {
+      "id": "proposal-writer",
+      "title": "Upwork Proposal Writer Prompt (GPT-4o / Claude 3.5)",
+      "target": "Upwork Proposals",
+      "prompt": "You are an expert freelance strategist and copywriter. Analyze the following Upwork job post: [PASTE JOB POST HERE]\n\nWrite a concise, 3-paragraph proposal following this exact structure:\n1. HOOK: Address the client by name (if mentioned in reviews) and state the immediate solution or proof of similar work completed. Do NOT use generic greetings or self-introductions.\n2. ACTION PLAN: Give a bulleted 3-step execution plan for solving their core pain point.\n3. LOW-FRICTION CTA: Ask a simple, relevant question inviting them to a brief chat or video walkthrough."
+    },
+    {
+      "id": "objection-handler",
+      "title": "High-Ticket Rate & Price Objection Handler",
+      "target": "Rate Negotiations",
+      "prompt": "Act as a senior agency pricing strategist. A client just said: 'Your proposal is great, but $3,500 is outside our budget.'\n\nGenerate 2 non-needy, high-status responses:\nResponse 1 (Scope Adjustment): Keep the high-value rate, but offer to reduce the initial scope to fit their target deposit.\nResponse 2 (ROI Re-anchoring): Remind them of the financial cost of doing nothing / delayed launch."
+    },
+    {
+      "id": "scope-defense",
+      "title": "Scope Creep Neutralizer Prompt",
+      "target": "Contract Management",
+      "prompt": "A client asked for an out-of-scope feature: '[INSERT REQUEST HERE]'.\nDraft a polite, professional reply that:\n1. Enthusiastically validates their feature idea.\n2. Explains that this falls under Phase 2 / an addendum.\n3. Provides an estimated price and timeline to add it to the project."
+    }
+  ]
+}
