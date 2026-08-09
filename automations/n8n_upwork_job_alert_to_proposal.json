@@ -1,0 +1,45 @@
+{
+  "name": "FreelanceWon OS - Upwork RSS Job Monitor & Proposal Drafter",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [{ "mode": "everyMinute" }]
+        },
+        "url": "https://www.upwork.com/ab/feed/jobs/rss?q=n8n+gohighlevel+automation"
+      },
+      "name": "Upwork RSS Feed Listener",
+      "type": "n8n-nodes-base.rssFeedRead",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o",
+        "prompt": "Analyze this Upwork job posting and generate a 3-paragraph Hook & Proof proposal:\nTitle: {{ $json.title }}\nDescription: {{ $json.contentSnippet }}"
+      },
+      "name": "GPT-4o Proposal Generator",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [480, 300]
+    },
+    {
+      "parameters": {
+        "channel": "#upwork-job-alerts",
+        "text": "🔥 *NEW UPWORK JOB MATCH*\n*Title*: {{ $json.title }}\n*Link*: {{ $json.link }}\n\n*Draft Proposal*:\n{{ $node[\"GPT-4o Proposal Generator\"].json.message.content }}"
+      },
+      "name": "Slack Alert",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 1,
+      "position": [720, 300]
+    }
+  ],
+  "connections": {
+    "Upwork RSS Feed Listener": {
+      "main": [[{ "node": "GPT-4o Proposal Generator", "type": "main", "index": 0 }]]
+    },
+    "GPT-4o Proposal Generator": {
+      "main": [[{ "node": "Slack Alert", "type": "main", "index": 0 }]]
+    }
+  }
+}

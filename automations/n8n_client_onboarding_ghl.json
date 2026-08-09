@@ -1,0 +1,49 @@
+{
+  "name": "FreelanceWon OS - Client Onboarding & GHL Sync",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "contract-won-webhook"
+      },
+      "name": "Contract Won Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "resource": "contact",
+        "operation": "upsert",
+        "email": "={{ $json.body.client_email }}",
+        "additionalFields": {
+          "tags": ["FreelanceWon-Client", "Active-Retainer"]
+        }
+      },
+      "name": "GoHighLevel Contact Sync",
+      "type": "n8n-nodes-base.gohighlevel",
+      "typeVersion": 1,
+      "position": [480, 300]
+    },
+    {
+      "parameters": {
+        "fromEmail": "adam@automatescale.com",
+        "toEmail": "={{ $json.body.client_email }}",
+        "subject": "Welcome to Kickoff — Next Steps for Your Project",
+        "html": "<p>Hi {{ $json.body.client_name }},</p><p>Excited to get started on your project! Please access your onboarding portal and fill out the intake details here: <a href=\"#\">Onboarding Portal</a></p>"
+      },
+      "name": "Send Onboarding Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 1,
+      "position": [720, 300]
+    }
+  ],
+  "connections": {
+    "Contract Won Webhook": {
+      "main": [[{ "node": "GoHighLevel Contact Sync", "type": "main", "index": 0 }]]
+    },
+    "GoHighLevel Contact Sync": {
+      "main": [[{ "node": "Send Onboarding Email", "type": "main", "index": 0 }]]
+    }
+  }
+}
