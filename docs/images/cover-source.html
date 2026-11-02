@@ -1,0 +1,110 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>FreelanceWon OS cover</title>
+<style>
+  :root { --bg:#0b0f19; --indigo:#6366f1; --purple:#8b5cf6; --emerald:#10b981; --amber:#f59e0b; --text:#f8fafc; --muted:#94a3b8; --dim:#64748b; --card:rgba(18,24,38,.82); --line:rgba(255,255,255,.09); }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html, body { width:var(--w); height:var(--h); overflow:hidden; }
+  body { font-family:'Inter', system-ui, sans-serif; color:var(--text); background:var(--bg);
+    background-image:
+      radial-gradient(ellipse 60% 70% at 12% 10%, rgba(99,102,241,.30), transparent 60%),
+      radial-gradient(ellipse 50% 60% at 95% 90%, rgba(16,185,129,.20), transparent 60%),
+      radial-gradient(ellipse 40% 40% at 70% 15%, rgba(139,92,246,.18), transparent 60%);
+    display:grid; grid-template-columns: 1.05fr 1fr; gap:calc(var(--u)*3); padding:calc(var(--u)*5.5) calc(var(--u)*6); }
+  body::before { content:''; position:absolute; inset:0; pointer-events:none;
+    background-image:linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+    background-size:calc(var(--u)*4) calc(var(--u)*4); mask-image:radial-gradient(ellipse at 30% 40%, #000 30%, transparent 75%); }
+  .left { display:flex; flex-direction:column; justify-content:center; gap:calc(var(--u)*2.2); position:relative; }
+  .pill { align-self:flex-start; display:flex; align-items:center; gap:calc(var(--u)*.8); font-size:calc(var(--u)*1.25); font-weight:600;
+    padding:calc(var(--u)*.7) calc(var(--u)*1.4); border-radius:999px; background:rgba(16,185,129,.12); color:#6ee7b7; border:1px solid rgba(16,185,129,.35); }
+  .pill i { width:calc(var(--u)*.8); height:calc(var(--u)*.8); border-radius:50%; background:var(--emerald); box-shadow:0 0 12px var(--emerald); }
+  h1 { font-size:calc(var(--u)*6.4); line-height:1; font-weight:800; letter-spacing:-.035em; }
+  h1 span { background:linear-gradient(90deg,#a5b4fc,#c4b5fd 45%,#6ee7b7); -webkit-background-clip:text; color:transparent; }
+  .sub { font-size:calc(var(--u)*2.05); line-height:1.35; color:#cbd5e1; max-width:30ch; font-weight:500; }
+  .chips { display:flex; flex-wrap:wrap; gap:calc(var(--u)*.9); }
+  .chip { font-size:calc(var(--u)*1.3); padding:calc(var(--u)*.75) calc(var(--u)*1.3); border-radius:calc(var(--u)*1); background:rgba(255,255,255,.05);
+    border:1px solid var(--line); color:#e2e8f0; display:flex; gap:calc(var(--u)*.6); align-items:center; }
+  .chip b { color:var(--c); font-weight:700; }
+  .foot { font-size:calc(var(--u)*1.25); color:var(--dim); display:flex; gap:calc(var(--u)*1.6); }
+  .foot strong { color:var(--muted); font-weight:600; }
+
+  .right { position:relative; display:flex; align-items:center; justify-content:center; }
+  .window { width:100%; border-radius:calc(var(--u)*1.6); background:var(--card); border:1px solid var(--line);
+    box-shadow:0 30px 80px rgba(0,0,0,.55), 0 0 60px rgba(99,102,241,.18); overflow:hidden; transform:perspective(1400px) rotateY(-7deg) rotateX(2deg); }
+  .bar { display:flex; align-items:center; gap:calc(var(--u)*.6); padding:calc(var(--u)*1) calc(var(--u)*1.4); border-bottom:1px solid var(--line); background:rgba(255,255,255,.025); }
+  .bar i { width:calc(var(--u)*.9); height:calc(var(--u)*.9); border-radius:50%; background:#334155; }
+  .bar span { margin-left:calc(var(--u)*1); font-size:calc(var(--u)*1.1); color:var(--dim); }
+  .body { padding:calc(var(--u)*1.8); display:grid; gap:calc(var(--u)*1.2); }
+  .row { display:flex; align-items:center; justify-content:space-between; }
+  .ttl { font-size:calc(var(--u)*1.55); font-weight:700; display:flex; align-items:center; gap:calc(var(--u)*.7); }
+  .ttl svg { width:calc(var(--u)*1.8); height:calc(var(--u)*1.8); }
+  .btn { font-size:calc(var(--u)*1.1); font-weight:600; padding:calc(var(--u)*.6) calc(var(--u)*1.1); border-radius:calc(var(--u)*.7); background:var(--indigo); }
+  .btn.g { background:var(--emerald); }
+  .btn.s { background:rgba(255,255,255,.07); border:1px solid var(--line); }
+  .steps { display:grid; grid-template-columns:repeat(4,1fr); gap:calc(var(--u)*.7); }
+  .step { border-radius:calc(var(--u)*.9); padding:calc(var(--u)*.9); background:rgba(255,255,255,.035); border:1px solid var(--line); font-size:calc(var(--u)*1.05); color:var(--muted); }
+  .step b { display:block; font-size:calc(var(--u)*1.2); color:var(--text); margin-bottom:calc(var(--u)*.2); }
+  .step.on { border-color:rgba(99,102,241,.6); background:rgba(99,102,241,.12); }
+  .draft { border-radius:calc(var(--u)*1); background:rgba(2,6,23,.55); border:1px solid var(--line); padding:calc(var(--u)*1.3); font-size:calc(var(--u)*1.22); line-height:1.5; color:#e2e8f0; }
+  .draft .q { color:#c7d2fe; font-weight:600; }
+  .checks { display:flex; flex-wrap:wrap; gap:calc(var(--u)*.6); font-size:calc(var(--u)*1.02); }
+  .checks span { padding:calc(var(--u)*.35) calc(var(--u)*.8); border-radius:999px; background:rgba(16,185,129,.12); color:#6ee7b7; border:1px solid rgba(16,185,129,.3); }
+  .preview { display:flex; align-items:center; justify-content:space-between; border-radius:calc(var(--u)*1); padding:calc(var(--u)*1.1) calc(var(--u)*1.3);
+    background:rgba(16,185,129,.08); border:1px solid rgba(16,185,129,.3); font-size:calc(var(--u)*1.2); }
+  .stack { position:relative; width:100%; }
+  .wa { position:absolute; right:calc(var(--u)*4); bottom:calc(var(--u)*-12.5); width:calc(var(--u)*21); border-radius:calc(var(--u)*1.3); padding:calc(var(--u)*1.1) calc(var(--u)*1.3);
+    background:#0f1a16; border:1px solid rgba(37,211,102,.35); box-shadow:0 20px 50px rgba(0,0,0,.6); font-size:calc(var(--u)*1.05); line-height:1.45; color:#d1fae5; }
+  .wa .h { display:flex; align-items:center; gap:calc(var(--u)*.6); font-weight:700; color:#86efac; margin-bottom:calc(var(--u)*.4); }
+  .wa .h i { width:calc(var(--u)*1.1); height:calc(var(--u)*1.1); border-radius:50%; background:#25d366; }
+  .wa .soon { display:inline-block; margin-top:calc(var(--u)*.5); font-size:calc(var(--u)*.9); color:var(--amber); }
+  body.social { grid-template-columns: 1fr 1fr; }
+  body.social { padding:calc(var(--u)*4) calc(var(--u)*4.5); gap:calc(var(--u)*2.5); }
+  body.social .sub { font-size:calc(var(--u)*1.8); }
+  body.social h1 { font-size:calc(var(--u)*5.6); }
+  body.social .foot { display:none; }
+</style></head>
+<body>
+  <div class="left">
+    <div class="pill"><i></i> Free &amp; open source · for the Skool community</div>
+    <h1>Freelance<span>Won</span> OS</h1>
+    <p class="sub">Win more Upwork work with your own login, your own AI key and a proven proposal playbook.</p>
+    <div class="chips">
+      <div class="chip" style="--c:#6ee7b7"><b>✓</b> Your own Upwork login, official MCP</div>
+      <div class="chip" style="--c:#a5b4fc"><b>✦</b> AI proposal playbook</div>
+      <div class="chip" style="--c:#c4b5fd"><b>▦</b> Pipeline CRM</div>
+      <div class="chip" style="--c:#fcd34d"><b>$</b> Pricing &amp; SOW builder</div>
+    </div>
+    <div class="foot"><span><strong>No scraping.</strong> No bots.</span><span><strong>You approve</strong> every proposal.</span><span>MIT license</span></div>
+  </div>
+  <div class="right">
+    <div class="stack"><div class="window">
+      <div class="bar"><i></i><i></i><i></i><span>FreelanceWon OS · Upwork Jobs</span></div>
+      <div class="body">
+        <div class="row">
+          <div class="ttl"><svg viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg> Upwork Jobs</div>
+          <div class="btn s">Connected</div>
+        </div>
+        <div class="steps">
+          <div class="step"><b>1 · Match</b>Upwork's own picks</div>
+          <div class="step on"><b>2 · Draft</b>Your playbook</div>
+          <div class="step"><b>3 · Preview</b>Connects cost</div>
+          <div class="step"><b>4 · Submit</b>Your click</div>
+        </div>
+        <div class="draft">
+          <span class="q">Do you already have the CRM set up, or is this from scratch?</span><br>
+          First thing I'd do is map your lead flow end to end, so we know what to automate before anything gets built. I've shipped this same setup for two coaching businesses.<br>
+          <span style="color:#64748b">Drafted with AI assistance and reviewed by me.</span>
+        </div>
+        <div class="checks"><span>✓ One question first</span><span>✓ Short</span><span>✓ No contact details</span><span>✓ AI disclosed</span></div>
+        <div class="preview"><span>Upwork preview · <b>12</b> Connects</span><div class="btn g">Submit on Upwork</div></div>
+      </div>
+    </div>
+    <div class="wa"><div class="h"><i></i> WhatsApp job alert</div>New job from your saved search<br><b>CRM automation for a coaching business</b><br>Fixed · Payment verified<span class="soon">● coming soon</span></div></div>
+  </div>
+<script>
+  const [w, h] = (location.hash.slice(1) || '1600x900').split('x').map(Number);
+  document.documentElement.style.setProperty('--w', w + 'px');
+  document.documentElement.style.setProperty('--h', h + 'px');
+  document.documentElement.style.setProperty('--u', (w / h > 1.9 ? h / 72 : Math.min(w / 1.6, h) / 90) + 'px');
+  if (w / h > 1.9) document.body.classList.add('social');
+</script>
+</body></html>
