@@ -5,6 +5,7 @@ import { ProposalStudio } from './components/ProposalStudio';
 import { PricingCalculator } from './components/PricingCalculator';
 import { ScopeBuilder } from './components/ScopeBuilder';
 import { SkoolHub } from './components/SkoolHub';
+import { UpworkJobs } from './components/UpworkJobs';
 
 const INITIAL_LEADS: Lead[] = [
   {
@@ -73,7 +74,7 @@ export function App() {
       id: Date.now().toString(),
       dateAdded: new Date().toISOString().split('T')[0],
     };
-    setLeads([newLead, ...leads]);
+    setLeads((current) => [newLead, ...current]);
   };
 
   const handleMoveLead = (id: string, newStage: Lead['stage']) => {
@@ -107,6 +108,7 @@ export function App() {
             onDeleteLead={handleDeleteLead}
           />
         )}
+        {activeTab === 'upwork' && <UpworkJobs onAddLead={handleAddLead} />}
         {activeTab === 'proposals' && <ProposalStudio />}
         {activeTab === 'pricing' && <PricingCalculator />}
         {activeTab === 'scope' && <ScopeBuilder />}

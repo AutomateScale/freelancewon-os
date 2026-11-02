@@ -1,5 +1,5 @@
 import React from 'react';
-import { Briefcase, Sparkles, DollarSign, FileText, Users, GitBranch } from 'lucide-react';
+import { Briefcase, Sparkles, DollarSign, FileText, Users, GitBranch, ShieldCheck } from 'lucide-react';
 
 interface NavbarProps {
   activeTab: string;
@@ -14,6 +14,7 @@ interface NavbarProps {
 export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, stats }) => {
   const tabs = [
     { id: 'pipeline', label: 'Pipeline & Leads', icon: Briefcase },
+    { id: 'upwork', label: 'Upwork Jobs', icon: ShieldCheck },
     { id: 'proposals', label: 'AI Proposal Studio', icon: Sparkles },
     { id: 'pricing', label: 'Value Calculator', icon: DollarSign },
     { id: 'scope', label: 'Scope Builder', icon: FileText },
@@ -43,7 +44,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, stats }
               <h1 style={{ fontSize: '1.25rem', fontWeight: 800, background: 'linear-gradient(135deg, #fff, #94a3b8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
                 FreelanceWon OS
               </h1>
-              <span className="badge badge-emerald">Skool OS Edition v1.0</span>
+              <span className="badge badge-emerald">Skool OS Edition v1.1</span>
             </div>
             <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
               Open Source Freelance CRM & AI Growth System
@@ -67,7 +68,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, stats }
           </div>
           
           <a 
-            href="https://github.com" 
+            href="https://github.com/AutomateScale/freelancewon-os" 
             target="_blank" 
             rel="noreferrer" 
             className="btn btn-secondary" 
