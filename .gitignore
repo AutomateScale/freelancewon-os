@@ -30,3 +30,6 @@ yarn-error.log*
 .DS_Store
 *.suo
 *.sw?
+
+# Example settings file is safe to commit
+!.env.example
