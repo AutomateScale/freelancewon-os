@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Link2, Search, Sparkles, ExternalLink, Send, ShieldCheck, Loader2, LogOut, PlusCircle } from 'lucide-react';
+import { Link2, Search, Sparkles, ExternalLink, Send, ShieldCheck, Loader2, LogOut, PlusCircle, PenLine } from 'lucide-react';
 import type { Lead } from './PipelineBoard';
+import { JobAlerts } from './JobAlerts';
+import { checkProposal, type Lane } from '../lib/proposalChecks';
 
 // Everything here goes through Upwork's official MCP server with your own Upwork login,
 // via the local server in /server. Job data stays in memory and is gone when you close the tab.
@@ -40,6 +42,7 @@ type Feed = 'best_match' | 'most_recent' | 'search';
 
 const ORG_KEY = 'freelancewon_upwork_org';
 const ABOUT_KEY = 'freelancewon_about_me';
+const PROOF_KEY = 'freelancewon_proof_link';
 
 async function api<T>(path: string, body?: unknown): Promise<T> {
   const res = await fetch(path, {
@@ -62,6 +65,40 @@ const clientText = (text?: string) => (text ?? '').replace(/<\/?untrusted_partic
 
 const errorText = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
+interface JobDetails {
+  applied?: boolean;
+  can_apply?: boolean;
+  connects_cost?: number;
+  screening_questions?: string[];
+  data?: { marketplaceJobPosting?: {
+    id?: string; url?: string;
+    content?: { title?: string };
+    contractTerms?: { contractType?: string; experienceLevel?: string;
+      hourlyContractTerms?: { hourlyBudgetMin?: number; hourlyBudgetMax?: number };
+      fixedPriceContractTerms?: { amount?: { displayValue?: string } } };
+    clientCompanyPublic?: { country?: { name?: string } };
+  } };
+}
+
+// The job-detail ("get") response has a different shape from search results.
+function jobFromDetails(d: JobDetails): UpworkJob {
+  const p = d.data?.marketplaceJobPosting ?? {};
+  const hourly = p.contractTerms?.hourlyContractTerms;
+  const budget = hourly?.hourlyBudgetMin || hourly?.hourlyBudgetMax
+    ? `$${hourly.hourlyBudgetMin ?? '?'}–$${hourly.hourlyBudgetMax ?? '?'}/hr`
+    : p.contractTerms?.fixedPriceContractTerms?.amount?.displayValue;
+  return {
+    id: p.id ?? '',
+    title: clientText(p.content?.title) || 'Upwork job',
+    url: p.url ?? '',
+    budget,
+    job_type: p.contractTerms?.contractType?.toLowerCase(),
+    applied: d.applied,
+    connect_price: d.connects_cost,
+    client: { country: p.clientCompanyPublic?.country?.name },
+  };
+}
+
 export const UpworkJobs: React.FC<{ onAddLead: (lead: Omit<Lead, 'id' | 'dateAdded'>) => void }> = ({ onAddLead }) => {
   const [serverUp, setServerUp] = useState<boolean | null>(null);
   const [connected, setConnected] = useState(false);
@@ -69,6 +106,9 @@ export const UpworkJobs: React.FC<{ onAddLead: (lead: Omit<Lead, 'id' | 'dateAdd
   const [accounts, setAccounts] = useState<UpworkAccount[]>([]);
   const [orgUid, setOrgUid] = useState(() => localStorage.getItem(ORG_KEY) ?? '');
   const [aboutMe, setAboutMe] = useState(() => localStorage.getItem(ABOUT_KEY) ?? '');
+  const [proofLink, setProofLink] = useState(() => localStorage.getItem(PROOF_KEY) ?? '');
+  const [lane, setLane] = useState<Lane>('full');
+  const [jobLink, setJobLink] = useState('');
 
   const [feed, setFeed] = useState<Feed>('best_match');
   const [query, setQuery] = useState('');
@@ -84,6 +124,8 @@ export const UpworkJobs: React.FC<{ onAddLead: (lead: Omit<Lead, 'id' | 'dateAdd
   const [disclosure, setDisclosure] = useState('Drafted with AI assistance and reviewed by me.');
   const [bid, setBid] = useState('');
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [jobQuestions, setJobQuestions] = useState<string[]>([]);
+  const [drafting, setDrafting] = useState(false);
   const [preview, setPreview] = useState<ProposalPreview | null>(null);
   const [submitted, setSubmitted] = useState(false);
 
@@ -111,6 +153,9 @@ export const UpworkJobs: React.FC<{ onAddLead: (lead: Omit<Lead, 'id' | 'dateAdd
   useEffect(() => { refreshStatus(); }, [refreshStatus]);
   useEffect(() => { if (orgUid) localStorage.setItem(ORG_KEY, orgUid); }, [orgUid]);
   useEffect(() => { localStorage.setItem(ABOUT_KEY, aboutMe); }, [aboutMe]);
+  useEffect(() => { localStorage.setItem(PROOF_KEY, proofLink); }, [proofLink]);
+  // Any edit after "Prepare on Upwork" makes the preview stale: prepare again before submitting.
+  useEffect(() => { setPreview(null); }, [draft, bid, answers, disclose]);
 
   const run = async (label: string, fn: () => Promise<void>) => {
     setBusy(label);
@@ -133,16 +178,33 @@ export const UpworkJobs: React.FC<{ onAddLead: (lead: Omit<Lead, 'id' | 'dateAdd
     setSelected(null);
   });
 
-  const startProposal = (job: UpworkJob) => run(`draft-${job.id}`, async () => {
+  // A job link pasted from Upwork (or from a WhatsApp alert) opens that one job.
+  const openLink = () => run('link', async () => {
+    if (!jobLink.trim()) throw new Error('Paste an Upwork job link.');
+    const details = await tool<JobDetails>('find_jobs', { action: 'get', org_uid: orgUid, params: { id: jobLink.trim() } });
+    const job = jobFromDetails(details);
+    if (!job.id) throw new Error('Upwork did not find that job.');
+    setJobs((current) => [job, ...current.filter((j) => j.id !== job.id)]);
+    setJobLink('');
+  });
+
+  // With AI, the draft is written from the full posting and your playbook. "Write it myself" starts blank.
+  const startProposal = (job: UpworkJob, withAi: boolean) => run(`draft-${job.id}`, async () => {
     setSelected(job);
     setDraft('');
+    setDrafting(false);
     setPreview(null);
     setSubmitted(false);
     setAnswers({});
-    const details = await tool<Record<string, unknown>>('find_jobs', { action: 'get', org_uid: orgUid, params: { id: job.id } });
-    const result = await api<{ draft: string; disclosure: string }>('/api/ai/draft', { job: details, aboutMe });
+    setJobQuestions([]);
+    const details = await tool<JobDetails>('find_jobs', { action: 'get', org_uid: orgUid, params: { id: job.id } });
+    setJobQuestions(details.screening_questions ?? []);
+    setDisclose(withAi);
+    if (!withAi) { setDrafting(true); return; }
+    const result = await api<{ draft: string; disclosure: string }>('/api/ai/draft', { job: details, aboutMe, lane, proofLink });
     setDraft(result.draft);
     setDisclosure(result.disclosure);
+    setDrafting(true);
   });
 
   const coverLetter = () => (disclose ? `${draft.trim()}\n\n${disclosure}` : draft.trim());
@@ -150,6 +212,8 @@ export const UpworkJobs: React.FC<{ onAddLead: (lead: Omit<Lead, 'id' | 'dateAdd
   const prepareOnUpwork = () => run('prepare', async () => {
     if (!selected) return;
     if (!Number(bid)) throw new Error('Enter your bid amount.');
+    const { problems } = checkProposal(draft, lane, proofLink);
+    if (problems.length) throw new Error(problems.join(' '));
     const invites = await tool<{ invitations?: unknown[] }>('list_freelancer_proposals', {
       action: 'invitations', org_uid: orgUid, params: { job_posting_id: selected.id },
     });
@@ -160,7 +224,10 @@ export const UpworkJobs: React.FC<{ onAddLead: (lead: Omit<Lead, 'id' | 'dateAdd
     const answered = Object.entries(answers).filter(([, a]) => a.trim());
     if (answered.length) params.answers = answered.map(([question, answer]) => ({ question, answer }));
     const data = await tool<ProposalPreview & { preview?: ProposalPreview }>('manage_proposals', { action: 'create', org_uid: orgUid, params }, true);
-    setPreview({ ...(data.preview ?? {}), ...data, answeredCount: answered.length });
+    const next: ProposalPreview = { ...(data.preview ?? {}), ...data, answeredCount: answered.length };
+    const asked = (next.screening_questions ?? []).map((q) => (typeof q === 'string' ? q : q.question));
+    if (asked.length) setJobQuestions(asked);
+    setPreview(next);
   });
 
   const submitOnUpwork = () => run('submit', async () => {
@@ -178,7 +245,8 @@ export const UpworkJobs: React.FC<{ onAddLead: (lead: Omit<Lead, 'id' | 'dateAdd
     setSelected(null);
   });
 
-  const questions = (preview?.screening_questions ?? []).map((q) => (typeof q === 'string' ? q : q.question));
+  const questions = jobQuestions;
+  const checks = checkProposal(draft, lane, proofLink);
 
   if (serverUp === false) {
     return (
@@ -246,7 +314,16 @@ export const UpworkJobs: React.FC<{ onAddLead: (lead: Omit<Lead, 'id' | 'dateAdd
                 </button>
               </div>
               {note && <p style={{ fontSize: '0.8rem', color: 'var(--text-dim)' }}>{note}</p>}
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                <input className="form-input" placeholder="Or paste an Upwork job link" value={jobLink} onChange={(e) => setJobLink(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') openLink(); }} style={{ flex: '1 1 220px' }} />
+                <button className="btn btn-secondary" onClick={openLink} disabled={busy !== null || !orgUid}>
+                  {busy === 'link' ? <Loader2 size={16} className="spin" /> : <Link2 size={16} />} Open job
+                </button>
+              </div>
             </div>
+
+            <JobAlerts api={api} orgUid={orgUid} filters={{ feed, query, jobType, verifiedOnly, maxProposals }} />
 
             {jobs.map((job) => (
               <div key={job.id} className="glass-card" style={{ padding: '16px', display: 'grid', gap: '8px', borderColor: selected?.id === job.id ? 'var(--primary)' : undefined }}>
@@ -275,10 +352,15 @@ export const UpworkJobs: React.FC<{ onAddLead: (lead: Omit<Lead, 'id' | 'dateAdd
                 )}
                 <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                   {!job.applied && (
-                    <button className="btn btn-primary" onClick={() => startProposal(job)} disabled={busy !== null || !aiProvider}
-                      title={aiProvider ? '' : 'Add ANTHROPIC_API_KEY or OPENAI_API_KEY to .env'}>
-                      {busy === `draft-${job.id}` ? <Loader2 size={16} className="spin" /> : <Sparkles size={16} />} Write proposal
-                    </button>
+                    <>
+                      <button className="btn btn-primary" onClick={() => startProposal(job, true)} disabled={busy !== null || !aiProvider}
+                        title={aiProvider ? '' : 'Add ANTHROPIC_API_KEY or OPENAI_API_KEY to .env'}>
+                        {busy === `draft-${job.id}` ? <Loader2 size={16} className="spin" /> : <Sparkles size={16} />} Draft with AI
+                      </button>
+                      <button className="btn btn-secondary" onClick={() => startProposal(job, false)} disabled={busy !== null}>
+                        <PenLine size={16} /> Write it myself
+                      </button>
+                    </>
                   )}
                   <a className="btn btn-secondary" href={job.url} target="_blank" rel="noreferrer"><ExternalLink size={16} /> View on Upwork</a>
                   <button className="btn btn-secondary" onClick={() => onAddLead({ clientName: 'Upwork client', projectTitle: job.title, value: 0, stage: 'backlog', source: 'Upwork', priority: 'Normal' })}>
@@ -296,20 +378,53 @@ export const UpworkJobs: React.FC<{ onAddLead: (lead: Omit<Lead, 'id' | 'dateAdd
                 <textarea className="form-textarea" rows={5} value={aboutMe} onChange={(e) => setAboutMe(e.target.value)}
                   placeholder="What you do, 2-3 real results with numbers, tools you know, how you like to work." />
               </div>
-              {!aiProvider && <p style={{ fontSize: '0.8rem', color: 'var(--accent-amber)' }}>Add ANTHROPIC_API_KEY or OPENAI_API_KEY to .env to draft proposals.</p>}
+              <div className="form-group">
+                <label className="form-label">Proof page or portfolio link (optional, used in full proposals)</label>
+                <input className="form-input" placeholder="https://..." value={proofLink} onChange={(e) => setProofLink(e.target.value)} />
+              </div>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Proposal style:</span>
+                <button className={lane === 'full' ? 'btn btn-primary' : 'btn btn-secondary'} onClick={() => setLane('full')}>Full proposal</button>
+                <button className={lane === 'quick' ? 'btn btn-primary' : 'btn btn-secondary'} onClick={() => setLane('quick')}>Quick note</button>
+              </div>
+              <p style={{ fontSize: '0.8rem', color: 'var(--text-dim)', marginTop: '8px' }}>
+                {lane === 'full'
+                  ? 'One question about their setup, then 3 to 6 short lines: your first step, your closest proof, your link.'
+                  : '1 to 3 sentences, under 75 words. Sounds like you typed it between calls.'}
+                {' '}Rules come from playbook/proposal-playbook.md; edit it to sound like you.
+              </p>
+              {!aiProvider && <p style={{ fontSize: '0.8rem', color: 'var(--accent-amber)' }}>Add ANTHROPIC_API_KEY or OPENAI_API_KEY to .env to draft proposals with AI.</p>}
             </div>
 
             {selected && (
               <div className="glass-card" style={{ padding: '16px', display: 'grid', gap: '12px' }}>
                 <strong>Proposal: {selected.title}</strong>
                 {busy === `draft-${selected.id}` && <p style={{ color: 'var(--text-muted)' }}><Loader2 size={16} className="spin" /> Writing a draft from the full posting...</p>}
-                {draft && !submitted && (
+                {drafting && !submitted && (
                   <>
-                    <textarea className="form-textarea" rows={12} value={draft} onChange={(e) => setDraft(e.target.value)} />
+                    <textarea className="form-textarea" rows={12} value={draft} onChange={(e) => setDraft(e.target.value)}
+                      placeholder={lane === 'quick' ? 'Do you already have ...? This is right in my wheelhouse ...' : 'Start with one question about their setup.'} />
+                    {(checks.problems.length > 0 || checks.warnings.length > 0) && draft.trim() && (
+                      <ul style={{ fontSize: '0.8rem', paddingLeft: '18px', display: 'grid', gap: '2px' }}>
+                        {checks.problems.map((p) => <li key={p} style={{ color: 'var(--accent-rose)' }}>{p}</li>)}
+                        {checks.warnings.map((w) => <li key={w} style={{ color: 'var(--accent-amber)' }}>{w}</li>)}
+                      </ul>
+                    )}
                     <label style={{ display: 'flex', gap: '6px', alignItems: 'center', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
                       <input type="checkbox" checked={disclose} onChange={(e) => setDisclose(e.target.checked)} />
-                      Add "{disclosure}" (Upwork's terms ask for AI-assisted content to be disclosed)
+                      Add "{disclosure}" (Upwork's terms ask for AI-assisted content to be disclosed; leave it on whenever AI helped)
                     </label>
+                    {questions.length > 0 && (
+                      <div style={{ display: 'grid', gap: '8px' }}>
+                        <p style={{ fontSize: '0.85rem' }}>The client asks these questions. Answer each one:</p>
+                        {questions.map((q) => (
+                          <div key={q} className="form-group">
+                            <label className="form-label">{clientText(q)}</label>
+                            <textarea className="form-textarea" rows={2} value={answers[q] ?? ''} onChange={(e) => setAnswers({ ...answers, [q]: e.target.value })} />
+                          </div>
+                        ))}
+                      </div>
+                    )}
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
                       <input className="form-input" type="number" min={1} placeholder={selected.job_type === 'hourly' ? 'Your hourly rate' : 'Your bid'}
                         value={bid} onChange={(e) => setBid(e.target.value)} style={{ width: '160px' }} />
@@ -335,17 +450,6 @@ export const UpworkJobs: React.FC<{ onAddLead: (lead: Omit<Lead, 'id' | 'dateAdd
                       <p style={{ fontSize: '0.85rem', color: 'var(--accent-amber)' }}>
                         You don't meet some of the client's preferred qualifications: {JSON.stringify(preview.unmet_preferred_qualifications)}. You can still apply.
                       </p>
-                    )}
-                    {questions.length > 0 && (
-                      <div style={{ display: 'grid', gap: '8px' }}>
-                        <p style={{ fontSize: '0.85rem' }}>The client asks these questions. Answer them, then click "Prepare on Upwork" again:</p>
-                        {questions.map((q) => (
-                          <div key={q} className="form-group">
-                            <label className="form-label">{q}</label>
-                            <textarea className="form-textarea" rows={2} value={answers[q] ?? ''} onChange={(e) => setAnswers({ ...answers, [q]: e.target.value })} />
-                          </div>
-                        ))}
-                      </div>
                     )}
                     {preview.preview_id && (preview.answeredCount ?? 0) >= questions.length && preview.can_apply !== false && (
                       <button className="btn btn-emerald" onClick={submitOnUpwork} disabled={busy !== null}>

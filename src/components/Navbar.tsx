@@ -44,7 +44,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activeTab, setActiveTab, stats }
               <h1 style={{ fontSize: '1.25rem', fontWeight: 800, background: 'linear-gradient(135deg, #fff, #94a3b8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
                 FreelanceWon OS
               </h1>
-              <span className="badge badge-emerald">Skool OS Edition v1.1</span>
+              <span className="badge badge-emerald">Skool OS Edition v1.2</span>
             </div>
             <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
               Open Source Freelance CRM & AI Growth System
